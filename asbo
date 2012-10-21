@@ -2,6 +2,8 @@
 
 readonly REPO=${REPO:-/var/lib/sbopkg/SBo/14.0}
 readonly CACHEDIR=${CACHEDIR:-/tmp/sbo/cache}
+readonly STAGEDIR=${STAGEDIR:-/tmp/sbo/stage}
+readonly FAKEROOT=/usr/bin/fakeroot
 
 #-----------------------------------------------------------------------------#
 
@@ -137,6 +139,7 @@ download_src() {
         md5s=( ${=MD5SUM} )
     fi
 
+    local -a srcfns
     while (( $#md5s > 0 ))
     do
         local src=$srcs[1]
@@ -157,11 +160,51 @@ download_src() {
                 die "MD5 sum does not match: $srcfn"
             fi
         fi
+        srcfns+=$srcfn
     done
 
     if (( $#dls > 0 ))
     then
         die "list length mismatch"
+    fi
+
+    print -l -- $srcfns
+}
+
+#-----------------------------------------------------------------------------#
+
+maybe_fakeroot() {
+    if [[ $UID != 0 && -x $FAKEROOT ]]
+    then
+        debug "running $FAKEROOT $@ in $PWD"
+        command $FAKEROOT "$@"
+        return $?
+    else
+        debug "running $@"
+        command "$@"
+        return $?
+    fi
+}
+
+build() {
+    local -r pkg=$1
+    local -r pkg_dir=$(find_pkg_dir $pkg)
+    local -r stagedir=$STAGEDIR/$pkg
+    shift 1
+
+    rm -rf $stagedir
+    mkdir -p $stagedir
+    cp -r $pkg_dir/* $stagedir
+    local fn
+    for fn in "$@"
+    do
+        ln -s $CACHEDIR/$fn $stagedir
+    done
+
+    cd $stagedir
+    if ! maybe_fakeroot sh $pkg.SlackBuild
+    then
+        die "error building $pkg"
     fi
 }
 
@@ -175,11 +218,15 @@ fi
 add_deps $1
 
 mkdir -p $CACHEDIR
+mkdir -p $STAGEDIR
 
 for pkg in $queue
 do
     cd $CACHEDIR
-    download_src $pkg
+    local -a srcfns
+    srcfns=($( download_src $pkg ))
+
+    build $pkg $srcfns
 done
 
 #-----------------------------------------------------------------------------#
