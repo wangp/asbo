@@ -5,6 +5,7 @@ readonly CACHEDIR=${CACHEDIR:-/tmp/sbo/cache}
 readonly STAGEDIR=${STAGEDIR:-/tmp/sbo/stage}
 readonly SLACKBUILD_SHELL=/bin/bash
 readonly FAKEROOT=/usr/bin/fakeroot
+readonly PKGDB=/var/log/packages
 
 #-----------------------------------------------------------------------------#
 
@@ -43,6 +44,25 @@ find_pkg_dir() {
         die "$pkg not found"
     fi
     print -- $pkg_dir[1]
+}
+
+#-----------------------------------------------------------------------------#
+
+is_installed() {
+    local -r pkg=$1
+    local file name
+    for file in $PKGDB/${pkg}*(N)
+    do
+        name=$(
+            echo ${file:t} |
+            sed -e 's/\(.*\)-\([^-]*\)-\([^-]*\)-\([0-9]*\)\(.*\)*/\1/'
+        )
+        if [[ $name == $pkg ]]
+        then
+            return 0
+        fi
+    done
+    return 1
 }
 
 #-----------------------------------------------------------------------------#
@@ -223,6 +243,14 @@ mkdir -p $STAGEDIR
 
 for pkg in $queue
 do
+    if is_installed $pkg
+    then
+        print -- "$pkg already installed, skipping."
+        continue
+    fi
+
+    print "Building $pkg"
+
     cd $CACHEDIR
     local -a srcfns
     srcfns=($( download_src $pkg ))
