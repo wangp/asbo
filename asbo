@@ -1,0 +1,89 @@
+#!/bin/zsh -e
+
+readonly REPO=${REPO:-/var/lib/sbopkg/SBo/14.0}
+
+#-----------------------------------------------------------------------------#
+
+debug() {
+    # print "DEBUG: $@" 1>&2
+}
+
+die() {
+    print "Error: $@" 1>&2
+    exit 1
+}
+
+#-----------------------------------------------------------------------------#
+
+seen=()
+queue=()
+
+is_seen() {
+    for x in $seen
+    do
+        if [[ $x == $1 ]]
+        then
+            return 0
+        fi
+    done
+    return 1
+}
+
+in_queue() {
+    for q in $queue
+    do
+        if [[ $q == $1 ]]
+        then
+            return 0
+        fi
+    done
+    return 1
+}
+
+add_deps() {
+    local pkg pkg_dir info req
+    pkg=$1
+    pkg_dir=( $REPO/*/$pkg(N) )
+    if [[ $#pkg_dir == 0 ]]
+    then
+        die "$pkg not found"
+    fi
+    info=$pkg_dir/$pkg.info
+    . $info # XXX makes a mess
+
+    seen+=$pkg
+    debug "seen $pkg"
+    for req in ${=REQUIRES}
+    do
+        if [[ $req == "%README%" ]]
+        then
+            continue
+        fi
+        if in_queue $req
+        then
+            debug "$req already queued"
+            continue
+        fi
+        if is_seen $req
+        then
+            die "circular dependency detected: $req"
+        fi
+        add_deps $req
+    done
+    debug "$pkg queued"
+    queue+=$pkg
+}
+
+#-----------------------------------------------------------------------------#
+
+if [[ -z $1 ]]
+then
+    die "no top-level package specified"
+fi
+
+add_deps $1
+
+print -l -- $queue
+
+#-----------------------------------------------------------------------------#
+# vim: set sts=4 sw=4 et:
