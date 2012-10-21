@@ -1,6 +1,7 @@
 #!/bin/zsh -e
 
 readonly REPO=${REPO:-/var/lib/sbopkg/SBo/14.0}
+readonly CACHEDIR=${CACHEDIR:-/tmp/sbo/cache}
 
 #-----------------------------------------------------------------------------#
 
@@ -8,10 +9,25 @@ debug() {
     # print "DEBUG: $@" 1>&2
 }
 
+warn() {
+    print "Warning: $@" 1>&2
+}
+
 die() {
     print "Error: $@" 1>&2
     exit 1
 }
+
+#-----------------------------------------------------------------------------#
+
+detect_arch() {
+    case "$( uname -m )" in
+        i?86) echo "x86" ;;
+           *) echo $( uname -m ) ;;
+    esac
+}
+
+readonly ARCH=${ARCH:-$(detect_arch)}
 
 #-----------------------------------------------------------------------------#
 
@@ -76,6 +92,76 @@ add_deps() {
 
 #-----------------------------------------------------------------------------#
 
+verify_file() {
+    local md5=$1
+    local fn=$2
+    if [[ -f $fn ]]
+    then
+        local digest=$( md5sum $fn | cut -d' ' -f1 )
+        if [[ $digest == $md5 ]]
+        then
+            debug "file exists and verified: $fn"
+            return 0
+        else
+            warn "MD5 sum does not match: $fn"
+        fi
+    else
+        debug "file does not exist: $fn"
+    fi
+    return 1
+}
+
+download_src() {
+    local pkg pkg_dir info
+    pkg=$1
+    pkg_dir=( $REPO/*/$pkg(N) )
+    if [[ $#pkg_dir == 0 ]]
+    then
+        die "$pkg not found"
+    fi
+    info=$pkg_dir/$pkg.info
+    . $info # XXX makes a mess
+
+    local md5s srcs
+    if [[ $ARCH == x86_64 && -n $DOWNLOAD_x86_64 ]]
+    then
+        srcs=( ${=DOWNLOAD_x86_64} )
+        md5s=( ${=MD5SUM_x86_64} )
+    else
+        srcs=( ${=DOWNLOAD} )
+        md5s=( ${=MD5SUM} )
+    fi
+
+    while (( $#md5s > 0 ))
+    do
+        local src=$srcs[1]
+        local md5=$md5s[1]
+        local srcfn=${src:t}
+        shift srcs
+        shift md5s
+        if ! verify_file $md5 $srcfn
+        then
+            debug "need to download: $srcfn"
+            rm -f $srcfn
+            if ! wget $src
+            then
+                die "failed to download $src"
+            fi
+            if ! verify_file $md5 $srcfn
+            then
+                die "MD5 sum does not match: $srcfn"
+            fi
+        fi
+    done
+
+    if (( $#dls > 0 ))
+    then
+        die "list length mismatch"
+    fi
+}
+
+#-----------------------------------------------------------------------------#
+
 if [[ -z $1 ]]
 then
     die "no top-level package specified"
@@ -83,7 +169,13 @@ fi
 
 add_deps $1
 
-print -l -- $queue
+mkdir -p $CACHEDIR
+
+for pkg in $queue
+do
+    cd $CACHEDIR
+    download_src $pkg
+done
 
 #-----------------------------------------------------------------------------#
 # vim: set sts=4 sw=4 et:
