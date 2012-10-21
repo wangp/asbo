@@ -31,6 +31,19 @@ readonly ARCH=${ARCH:-$(detect_arch)}
 
 #-----------------------------------------------------------------------------#
 
+find_pkg_dir() {
+    local pkg pkg_dir
+    pkg=$1
+    pkg_dir=( $REPO/*/$pkg(N) )
+    if [[ $#pkg_dir == 0 ]]
+    then
+        die "$pkg not found"
+    fi
+    print -- $pkg_dir[1]
+}
+
+#-----------------------------------------------------------------------------#
+
 seen=()
 queue=()
 
@@ -57,18 +70,15 @@ in_queue() {
 }
 
 add_deps() {
-    local pkg pkg_dir info req
-    pkg=$1
-    pkg_dir=( $REPO/*/$pkg(N) )
-    if [[ $#pkg_dir == 0 ]]
-    then
-        die "$pkg not found"
-    fi
-    info=$pkg_dir/$pkg.info
+    local pkg=$1
+    local pkg_dir=$(find_pkg_dir $pkg)
+    [[ -d $pkg_dir ]] || exit 1
+    local info=$pkg_dir/$pkg.info
     . $info # XXX makes a mess
 
     seen+=$pkg
     debug "seen $pkg"
+    local req
     for req in ${=REQUIRES}
     do
         if [[ $req == "%README%" ]]
@@ -112,14 +122,9 @@ verify_file() {
 }
 
 download_src() {
-    local pkg pkg_dir info
-    pkg=$1
-    pkg_dir=( $REPO/*/$pkg(N) )
-    if [[ $#pkg_dir == 0 ]]
-    then
-        die "$pkg not found"
-    fi
-    info=$pkg_dir/$pkg.info
+    local pkg=$1
+    local pkg_dir=$(find_pkg_dir $pkg)
+    local info=$pkg_dir/$pkg.info
     . $info # XXX makes a mess
 
     local md5s srcs
