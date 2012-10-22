@@ -3,8 +3,10 @@
 readonly REPO=${REPO:-/var/lib/sbopkg/SBo/14.0}
 readonly CACHEDIR=${CACHEDIR:-/tmp/sbo/cache}
 readonly STAGEDIR=${STAGEDIR:-/tmp/sbo/stage}
+readonly LOGDIR=${LOGDIR:-/tmp/sbo/log}
 readonly SLACKBUILD_SHELL=/bin/bash
 readonly FAKEROOT=/usr/bin/fakeroot
+readonly SUDO=/usr/bin/sudo
 readonly PKGDB=/var/log/packages
 
 #-----------------------------------------------------------------------------#
@@ -246,6 +248,30 @@ build() {
 
 #-----------------------------------------------------------------------------#
 
+extract_built_pkg_filename() {
+    local -r logfile=$1
+    tail -3 $logfile | grep '^Slackware package .* created[.]$' | cut -d' ' -f3
+}
+
+maybe_sudo() {
+    if [[ $UID != 0 && -x $SUDO ]]
+    then
+        debug "running $SUDO $@"
+        command $SUDO "$@"
+        return $?
+    else
+        debug "running $@"
+        command "$@"
+        return $?
+    fi
+}
+
+install() {
+    maybe_sudo /sbin/upgradepkg --install-new --reinstall $1
+}
+
+#-----------------------------------------------------------------------------#
+
 top_pkg=$1
 
 if [[ -z $top_pkg ]]
@@ -257,6 +283,7 @@ add_deps $top_pkg
 
 mkdir -p $CACHEDIR
 mkdir -p $STAGEDIR
+mkdir -p $LOGDIR
 
 for pkg in $queue
 do
@@ -279,7 +306,14 @@ do
     local -a srcfns
     srcfns=($( download_src $pkg ))
 
-    build $pkg $srcfns
+    local logfile=$LOGDIR/$pkg.log
+    if ! build $pkg $srcfns 2>&1 | tee $logfile
+    then
+        die "build failed"
+    fi
+
+    print "Installing $pkg (enter sudo password if required)"
+    install $(extract_built_pkg_filename $logfile)
 done
 
 #-----------------------------------------------------------------------------#
