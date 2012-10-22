@@ -274,13 +274,17 @@ install() {
 
 # Parse options
 
+mode_dryrun=0
 mode_download=0
 mode_build=0
 mode_install=0
 
-while getopts dbi OPT
+while getopts ndbi OPT
 do
     case $OPT in
+        (n)
+            mode_dryrun=1
+            ;;
         (d)
             mode_download=1
             ;;
@@ -320,6 +324,13 @@ fi
 
 add_deps $top_pkg
 
+if (( $mode_dryrun ))
+then
+    print "Would build packages in this order:"
+    print "  $queue"
+    exit 0
+fi
+
 mkdir -p $CACHEDIR
 mkdir -p $STAGEDIR
 mkdir -p $LOGDIR
@@ -339,8 +350,6 @@ do
         continue
     fi
 
-    print "Building $pkg"
-
     cd $CACHEDIR
     local logfile=$LOGDIR/$pkg.log
     local -a srcfns
@@ -348,7 +357,7 @@ do
 
     if (( $mode_build ))
     then
-        print -- "Building $pkg"
+        print "Building $pkg"
         if ! build $pkg $srcfns 2>&1 | tee $logfile
         then
             die "build failed"
