@@ -48,7 +48,22 @@ find_pkg_dir() {
 
 #-----------------------------------------------------------------------------#
 
-is_installed() {
+same_version_installed() {
+    local -r pkg=$1
+    local -r pkg_dir=$(find_pkg_dir $pkg)
+    local -r info=$pkg_dir/$pkg.info
+    . $info # XXX makes a mess
+
+    local found
+    found=( $PKGDB/$PRGNAM-$VERSION-*-*(N) )
+    if [[ $#found > 0 ]]
+    then
+        return 0
+    fi
+    return 1
+}
+
+some_version_installed() {
     local -r pkg=$1
     local file name
     for file in $PKGDB/${pkg}*(N)
@@ -231,19 +246,28 @@ build() {
 
 #-----------------------------------------------------------------------------#
 
-if [[ -z $1 ]]
+top_pkg=$1
+
+if [[ -z $top_pkg ]]
 then
     die "no top-level package specified"
 fi
 
-add_deps $1
+add_deps $top_pkg
 
 mkdir -p $CACHEDIR
 mkdir -p $STAGEDIR
 
 for pkg in $queue
 do
-    if is_installed $pkg
+    if [[ $pkg == $top_pkg ]]
+    then
+        if same_version_installed $pkg
+        then
+            print -- "$pkg (same version) already installed, skipping."
+            continue
+        fi
+    elif some_version_installed $pkg
     then
         print -- "$pkg already installed, skipping."
         continue
