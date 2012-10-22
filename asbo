@@ -272,6 +272,45 @@ install() {
 
 #-----------------------------------------------------------------------------#
 
+# Parse options
+
+mode_download=0
+mode_build=0
+mode_install=0
+
+while getopts dbi OPT
+do
+    case $OPT in
+        (d)
+            mode_download=1
+            ;;
+        (b)
+            mode_download=1
+            mode_build=1
+            ;;
+        (i)
+            mode_download=1
+            mode_build=1
+            mode_install=1
+            ;;
+        (?)
+            die "unrecognised option"
+            ;;
+    esac
+done
+shift $(( $OPTIND - 1 ))
+
+case $mode_download,$mode_build,$mode_install in
+    (0,0,0)
+        # Default to -i.
+        mode_download=1
+        mode_build=1
+        mode_install=1
+        ;;
+esac
+
+#-----------------------------------------------------------------------------#
+
 top_pkg=$1
 
 if [[ -z $top_pkg ]]
@@ -303,17 +342,24 @@ do
     print "Building $pkg"
 
     cd $CACHEDIR
+    local logfile=$LOGDIR/$pkg.log
     local -a srcfns
     srcfns=($( download_src $pkg ))
 
-    local logfile=$LOGDIR/$pkg.log
-    if ! build $pkg $srcfns 2>&1 | tee $logfile
+    if (( $mode_build ))
     then
-        die "build failed"
+        print -- "Building $pkg"
+        if ! build $pkg $srcfns 2>&1 | tee $logfile
+        then
+            die "build failed"
+        fi
     fi
 
-    print "Installing $pkg (enter sudo password if required)"
-    install $(extract_built_pkg_filename $logfile)
+    if (( $mode_install ))
+    then
+        print "Installing $pkg (enter sudo password if required)"
+        install $(extract_built_pkg_filename $logfile)
+    fi
 done
 
 #-----------------------------------------------------------------------------#
