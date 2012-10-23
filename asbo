@@ -50,6 +50,16 @@ find_pkg_dir() {
 
 #-----------------------------------------------------------------------------#
 
+split_pkg_name() {
+    local longname=${1:t}
+    if [[ $longname =~ \(.*\)-\([^-]*\)-\([^-]*\)-\(.*\) ]]
+    then
+        print -- $match
+    else
+        print -- $longname
+    fi
+}
+
 same_version_installed() {
     local -r pkg=$1
     local -r pkg_dir=$(find_pkg_dir $pkg)
@@ -67,14 +77,12 @@ same_version_installed() {
 
 some_version_installed() {
     local -r pkg=$1
-    local file name
+    local file
     for file in $PKGDB/${pkg}*(N)
     do
-        name=$(
-            echo ${file:t} |
-            sed -e 's/\(.*\)-\([^-]*\)-\([^-]*\)-\([0-9]*\)\(.*\)*/\1/'
-        )
-        if [[ $name == $pkg ]]
+        local split
+        split=($( split_pkg_name $file ))
+        if [[ $split[1] == $pkg ]]
         then
             return 0
         fi
