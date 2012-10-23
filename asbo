@@ -282,14 +282,18 @@ install() {
 
 # Parse options
 
+mode_checkupdates=0
 mode_dryrun=0
 mode_download=0
 mode_build=0
 mode_install=0
 
-while getopts ndbi OPT
+while getopts cndbi OPT
 do
     case $OPT in
+        (c)
+            mode_checkupdates=1
+            ;;
         (n)
             mode_dryrun=1
             ;;
@@ -312,14 +316,48 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-case $mode_download,$mode_build,$mode_install in
-    (0,0,0)
+case $mode_checkupdates,$mode_download,$mode_build,$mode_install in
+    (0,0,0,0)
         # Default to -i.
         mode_download=1
         mode_build=1
         mode_install=1
         ;;
 esac
+
+#-----------------------------------------------------------------------------#
+
+checkupdates() {
+    local file split
+    for file in $PKGDB/*_SBo(N)
+    do
+        split=($( split_pkg_name $file ))
+        local pkg=$split[1]
+        local installed_version=$split[2]
+        # XXX should not die if not found
+        local pkg_dir=$(find_pkg_dir $pkg)
+        if [[ ! -d $pkg_dir ]]
+        then
+            print -- "$pkg not in SlackBuilds repository"
+            continue
+        fi
+        local info=$pkg_dir/$pkg.info
+        . $info # XXX makes a mess
+
+        if [[ $VERSION != $installed_version ]]
+        then
+            print -- "$pkg $VERSION"
+            print -- "\t${file:t}"
+            print
+        fi
+    done
+}
+
+if (( $mode_checkupdates ))
+then
+    checkupdates
+    exit 0
+fi
 
 #-----------------------------------------------------------------------------#
 
