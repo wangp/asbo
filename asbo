@@ -8,6 +8,7 @@ readonly SLACKBUILD_SHELL=/bin/bash
 readonly FAKEROOT=/usr/bin/fakeroot
 readonly SUDO=/usr/bin/sudo
 readonly PKGDB=/var/log/packages
+readonly PAGER=${PAGER:-more}
 
 #-----------------------------------------------------------------------------#
 
@@ -288,8 +289,9 @@ mode_download=0
 mode_build=0
 mode_install=0
 mode_rebase=0
+mode_changelog=0
 
-while getopts cndbir OPT
+while getopts cndbirl OPT
 do
     case $OPT in
         (c)
@@ -313,6 +315,9 @@ do
         (r)
             mode_rebase=1
             ;;
+        (l)
+            mode_changelog=1
+            ;;
         (?)
             die "unrecognised option"
             ;;
@@ -320,8 +325,8 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_rebase in
-    (0,0,0,0,0)
+case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_rebase,$mode_changelog in
+    (0,0,0,0,0,0)
         # Default to -i.
         mode_download=1
         mode_build=1
@@ -333,9 +338,17 @@ esac
 
 if (( $mode_rebase ))
 then
-    print -- "Updating repository:  git pull --rebase"
+    print "Updating repository:  git pull --rebase"
     cd $REPO
     exec git pull --rebase
+fi
+
+#-----------------------------------------------------------------------------#
+
+if (( $mode_changelog ))
+then
+    cd $REPO
+    exec $PAGER ChangeLog.txt
 fi
 
 #-----------------------------------------------------------------------------#
