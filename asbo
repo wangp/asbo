@@ -287,8 +287,9 @@ mode_dryrun=0
 mode_download=0
 mode_build=0
 mode_install=0
+mode_rebase=0
 
-while getopts cndbi OPT
+while getopts cndbir OPT
 do
     case $OPT in
         (c)
@@ -309,6 +310,9 @@ do
             mode_build=1
             mode_install=1
             ;;
+        (r)
+            mode_rebase=1
+            ;;
         (?)
             die "unrecognised option"
             ;;
@@ -316,14 +320,23 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-case $mode_checkupdates,$mode_download,$mode_build,$mode_install in
-    (0,0,0,0)
+case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_rebase in
+    (0,0,0,0,0)
         # Default to -i.
         mode_download=1
         mode_build=1
         mode_install=1
         ;;
 esac
+
+#-----------------------------------------------------------------------------#
+
+if (( $mode_rebase ))
+then
+    print -- "Updating repository:  git pull --rebase"
+    cd $REPO
+    exec git pull --rebase
+fi
 
 #-----------------------------------------------------------------------------#
 
