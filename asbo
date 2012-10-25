@@ -290,8 +290,9 @@ mode_build=0
 mode_install=0
 mode_rebase=0
 mode_changelog=0
+mode_search=0
 
-while getopts cndbirl OPT
+while getopts cndbirls OPT
 do
     case $OPT in
         (c)
@@ -318,6 +319,9 @@ do
         (l)
             mode_changelog=1
             ;;
+        (s)
+            mode_search=1
+            ;;
         (?)
             die "unrecognised option"
             ;;
@@ -325,8 +329,8 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_rebase,$mode_changelog in
-    (0,0,0,0,0,0)
+case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_rebase,$mode_changelog,$mode_search in
+    (0,0,0,0,0,0,0)
         # Default to -i.
         mode_download=1
         mode_build=1
@@ -349,6 +353,45 @@ if (( $mode_changelog ))
 then
     cd $REPO
     exec $PAGER ChangeLog.txt
+fi
+
+#-----------------------------------------------------------------------------#
+
+search() {
+    local glob dir
+    # Interpret shell metacharacters in $1.
+    glob=( $REPO/*/${~1}(/N) )
+    if (( $#glob == 0 ))
+    then
+        print -- "No package found: $1"
+        return 1
+    fi
+    for dir in $glob
+    do
+        (
+            cd $dir
+            echo "Package: ${dir:t}"
+            echo
+            cat README
+            echo
+            echo "--------"
+            echo
+            cat *.info
+            echo
+            echo "--------"
+            echo
+            cat *.SlackBuild
+        ) | $PAGER
+    done
+}
+
+if (( $mode_search ))
+then
+    for arg
+    do
+        search $arg
+    done
+    exit 0
 fi
 
 #-----------------------------------------------------------------------------#
