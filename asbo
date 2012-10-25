@@ -291,8 +291,9 @@ mode_install=0
 mode_rebase=0
 mode_changelog=0
 mode_search=0
+mode_gensearch=0
 
-while getopts cndbirls OPT
+while getopts cndbirlsg OPT
 do
     case $OPT in
         (c)
@@ -322,6 +323,9 @@ do
         (s)
             mode_search=1
             ;;
+        (g)
+            mode_gensearch=1
+            ;;
         (?)
             die "unrecognised option"
             ;;
@@ -329,12 +333,18 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_rebase,$mode_changelog,$mode_search in
-    (0,0,0,0,0,0,0)
+case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_rebase,$mode_changelog,$mode_search,$mode_gensearch in
+    (0,0,0,0,0,0,0,0)
         # Default to -i.
         mode_download=1
         mode_build=1
         mode_install=1
+        ;;
+esac
+
+case $mode_search,$mode_gensearch in
+    (1,1)
+        die "-s, -g both specified"
         ;;
 esac
 
@@ -363,7 +373,7 @@ search() {
     glob=( $REPO/*/${~1}(/N) )
     if (( $#glob == 0 ))
     then
-        print -- "No package found: $1"
+        print "No package found: $1"
         return 1
     fi
     for dir in $glob
@@ -390,6 +400,29 @@ then
     for arg
     do
         search $arg
+    done
+    exit 0
+fi
+
+#-----------------------------------------------------------------------------#
+
+gensearch() {(
+    setopt no_case_glob
+    cd $REPO
+    glob=( */*${1}*(/N) )
+    if (( $#glob == 0 ))
+    then
+        print "No package found: $1"
+        return
+    fi
+    print -l -- $glob
+)}
+
+if (( $mode_gensearch ))
+then
+    for arg
+    do
+        gensearch $arg
     done
     exit 0
 fi
