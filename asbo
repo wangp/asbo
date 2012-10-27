@@ -97,24 +97,18 @@ seen=()
 queue=()
 
 is_seen() {
-    for x in $seen
-    do
-        if [[ $x == $1 ]]
-        then
-            return 0
-        fi
-    done
+    if [[ -n ${seen[(re)$1]} ]]
+    then
+        return 0
+    fi
     return 1
 }
 
 in_queue() {
-    for q in $queue
-    do
-        if [[ $q == $1 ]]
-        then
-            return 0
-        fi
-    done
+    if [[ -n ${queue[(re)$1]} ]]
+    then
+        return 0
+    fi
     return 1
 }
 
