@@ -350,7 +350,7 @@ then
 fi
 if [[ -f $cfg  ]]
 then
-    . =( grep -E -e '^(REPO|CACHEDIR|STAGEDIR|LOGDIR)=' $cfg )
+    . =( grep -E -e '^(REPO|CACHEDIR|STAGEDIR|LOGDIR|TMP|OUTPUT|MAKEFLAGS)=' $cfg )
 fi
 
 prefix=/tmp/asbo
@@ -358,6 +358,10 @@ readonly REPO=${REPO:-${prefix}/slackbuilds}
 readonly CACHEDIR=${CACHEDIR:-${prefix}/cache}
 readonly STAGEDIR=${STAGEDIR:-${prefix}/stage}
 readonly LOGDIR=${LOGDIR:-${prefix}/log}
+
+export TMP=${TMP:-}
+export OUTPUT=${OUTPUT:-}
+export MAKEFLAGS=${MAKEFLAGS:-}
 
 #-----------------------------------------------------------------------------#
 
