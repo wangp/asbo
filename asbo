@@ -1,9 +1,6 @@
 #!/bin/zsh -e
 
-readonly REPO=${REPO:-/var/lib/sbopkg/SBo/14.0}
-readonly CACHEDIR=${CACHEDIR:-/tmp/sbo/cache}
-readonly STAGEDIR=${STAGEDIR:-/tmp/sbo/stage}
-readonly LOGDIR=${LOGDIR:-/tmp/sbo/log}
+readonly GIT_URL="git://slackbuilds.org/slackbuilds"
 readonly SLACKBUILD_SHELL=/bin/bash
 readonly FAKEROOT=/usr/bin/fakeroot
 readonly SUDO=/usr/bin/sudo
@@ -341,6 +338,53 @@ case $mode_search,$mode_gensearch in
         die "-s, -g both specified"
         ;;
 esac
+
+#-----------------------------------------------------------------------------#
+
+# Configuration
+
+cfg=$HOME/.config/asbo/asbo.conf
+if [[ ! -f $cfg ]]
+then
+    cfg=/etc/asbo/asbo.conf
+fi
+if [[ -f $cfg  ]]
+then
+    . =( grep -E -e '^(REPO|CACHEDIR|STAGEDIR|LOGDIR)=' $cfg )
+fi
+
+prefix=/tmp/asbo
+readonly REPO=${REPO:-${prefix}/slackbuilds}
+readonly CACHEDIR=${CACHEDIR:-${prefix}/cache}
+readonly STAGEDIR=${STAGEDIR:-${prefix}/stage}
+readonly LOGDIR=${LOGDIR:-${prefix}/log}
+
+#-----------------------------------------------------------------------------#
+
+# Set up repo
+
+if [[ ! -e $REPO ]]
+then
+    print "Repository directory does not exist:  $REPO"
+    print -n "Would you like to clone it with git now [y,n]? "
+    read yn
+    case $yn in
+        ([yY])
+            mkdir -p $REPO
+            print "Cloning:  git clone $GIT_URL $REPO"
+            git clone $GIT_URL $REPO
+            ;;
+        (*)
+            die "Please set up the repository manually."
+            exit 1
+            ;;
+    esac
+fi
+
+if [[ ! -d $REPO ]]
+then
+    die "$REPO is not a directory"
+fi
 
 #-----------------------------------------------------------------------------#
 
