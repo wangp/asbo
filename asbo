@@ -506,7 +506,7 @@ do
     if (( $mode_build ))
     then
         print "Building $pkg"
-        if ! build $pkg $srcfns 2>&1 | tee $logfile
+        if ! build $pkg $srcfns >& /dev/stdout >& $logfile
         then
             die "build failed"
         fi
