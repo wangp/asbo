@@ -3,6 +3,7 @@
 readonly REPO=${REPO:-/var/lib/sbopkg/SBo/14.0}
 readonly CACHEDIR=${CACHEDIR:-/tmp/sbo/cache}
 readonly STAGEDIR=${STAGEDIR:-/tmp/sbo/stage}
+readonly SLACKBUILD_SHELL=/bin/bash
 readonly FAKEROOT=/usr/bin/fakeroot
 
 #-----------------------------------------------------------------------------#
@@ -202,7 +203,7 @@ build() {
     done
 
     cd $stagedir
-    if ! maybe_fakeroot sh $pkg.SlackBuild
+    if ! maybe_fakeroot $SLACKBUILD_SHELL $pkg.SlackBuild
     then
         die "error building $pkg"
     fi
