@@ -49,12 +49,12 @@ find_pkg_dir() {
 #-----------------------------------------------------------------------------#
 
 split_pkg_name() {
-    local longname=${1:t}
-    if [[ $longname =~ \(.*\)-\([^-]*\)-\([^-]*\)-\(.*\) ]]
+    # For speed, the results are left in the array `match'.
+    if [[ ${1:t} =~ \(.*\)-\([^-]*\)-\([^-]*\)-\(.*\) ]]
     then
-        print -- $match
+        return
     else
-        print -- $longname
+        match=( $longname UNKNOWN_VERSION )
     fi
 }
 
@@ -78,9 +78,8 @@ some_version_installed() {
     local file
     for file in $PKGDB/${pkg}*(N)
     do
-        local split
-        split=($( split_pkg_name $file ))
-        if [[ $split[1] == $pkg ]]
+        split_pkg_name $file
+        if [[ $match[1] == $pkg ]]
         then
             return 0
         fi
@@ -475,9 +474,9 @@ checkupdates() {
     local file split
     for file in $PKGDB/*_SBo(N)
     do
-        split=($( split_pkg_name $file ))
-        local pkg=$split[1]
-        local installed_version=$split[2]
+        split_pkg_name $file
+        local pkg=$match[1]
+        local installed_version=$match[2]
         # XXX should not die if not found
         local pkg_dir=$(find_pkg_dir $pkg)
         if [[ ! -d $pkg_dir ]]
