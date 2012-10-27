@@ -463,14 +463,17 @@ fi
 
 #-----------------------------------------------------------------------------#
 
-top_pkg=$1
+top_pkgs=( $@ )
+for top_pkg in $top_pkgs
+do
+    add_deps $top_pkg
+done
+unset top_pkg
 
-if [[ -z $top_pkg ]]
+if (( $#queue == 0 ))
 then
-    die "no top-level package specified"
+    die "No packages queued."
 fi
-
-add_deps $top_pkg
 
 if (( $mode_dryrun ))
 then
@@ -485,7 +488,7 @@ mkdir -p $LOGDIR
 
 for pkg in $queue
 do
-    if [[ $pkg == $top_pkg ]]
+    if [[ -n ${top_pkgs[(re)$pkg]} ]]
     then
         if same_version_installed $pkg
         then
