@@ -144,18 +144,24 @@ add_deps() {
 verify_file() {
     local md5=$1
     local fn=$2
-    if [[ -f $fn ]]
+    if [[ ! -f $fn ]]
     then
-        local digest=$( md5sum $fn | cut -d' ' -f1 )
-        if [[ $digest == $md5 ]]
-        then
-            debug "file exists and verified: $fn"
-            return 0
-        else
-            warn "MD5 sum does not match: $fn"
-        fi
-    else
         debug "file does not exist: $fn"
+        return 1
+    fi
+    # This extension is useful for certain custom slackbuilds.
+    if [[ $md5 == UNKNOWN ]]
+    then
+        warn "MD5 sum is UNKNOWN; skipping check."
+        return 0
+    fi
+    local digest=$( md5sum $fn | cut -d' ' -f1 )
+    if [[ $digest == $md5 ]]
+    then
+        debug "file exists and verified: $fn"
+        return 0
+    else
+        warn "MD5 sum does not match: $fn"
     fi
     return 1
 }
