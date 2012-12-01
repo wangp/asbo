@@ -539,8 +539,16 @@ do
     then
         if same_version_installed $pkg
         then
-            print -- "$pkg (same version) already installed, skipping."
-            continue
+            print -- "$pkg (same version) already installed."
+            print -n -- "Process anyway [y,n]? "
+            read yn
+            case $yn in
+                ([yY]) ;;
+                (*)
+                    echo "Skipping $pkg."
+                    continue
+                    ;;
+            esac
         fi
     elif some_version_installed $pkg
     then
