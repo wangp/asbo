@@ -409,7 +409,7 @@ fi
 if (( $mode_changelog ))
 then
     cd $REPO
-    exec $PAGER ChangeLog.txt
+    exec ${=PAGER} ChangeLog.txt
 fi
 
 #-----------------------------------------------------------------------------#
@@ -438,7 +438,7 @@ search() {
             echo "--------"
             echo
             cat *.SlackBuild
-        ) | $PAGER
+        ) | ${=PAGER}
     done
 }
 
