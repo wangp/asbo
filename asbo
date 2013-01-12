@@ -194,7 +194,7 @@ download_src() {
         then
             debug "need to download: $srcfn"
             rm -f $srcfn
-            if ! wget $src
+            if ! ${=WGET} $src
             then
                 die "failed to download $src"
             fi
@@ -355,7 +355,7 @@ then
 fi
 if [[ -f $cfg  ]]
 then
-    . =( grep -E -e '^(REPO|CACHEDIR|STAGEDIR|LOGDIR|TMP|OUTPUT|MAKEFLAGS)=' $cfg )
+    . =( grep -E -e '^(REPO|CACHEDIR|STAGEDIR|LOGDIR|TMP|OUTPUT|MAKEFLAGS|WGET)=' $cfg )
 fi
 
 prefix=/tmp/asbo
@@ -363,6 +363,7 @@ readonly REPO=${REPO:-${prefix}/slackbuilds}
 readonly CACHEDIR=${CACHEDIR:-${prefix}/cache}
 readonly STAGEDIR=${STAGEDIR:-${prefix}/stage}
 readonly LOGDIR=${LOGDIR:-${prefix}/log}
+readonly WGET=${WGET:-/usr/bin/wget}
 
 export TMP=${TMP:-}
 export OUTPUT=${OUTPUT:-}
