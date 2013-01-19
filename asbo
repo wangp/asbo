@@ -166,6 +166,10 @@ verify_file() {
     return 1
 }
 
+percent_decode() {
+    echo -e ${1//'%'/'\x'}
+}
+
 download_src() {
     local pkg=$1
     local pkg_dir=$(find_pkg_dir $pkg)
@@ -187,7 +191,7 @@ download_src() {
     do
         local src=$srcs[1]
         local md5=$md5s[1]
-        local srcfn=${src:t}
+        local srcfn=$(percent_decode ${src:t})
         shift srcs
         shift md5s
         if ! verify_file $md5 $srcfn
