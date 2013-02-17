@@ -194,7 +194,7 @@ download_src() {
         local srcfn=$(percent_decode ${src:t})
         shift srcs
         shift md5s
-        if ! verify_file $md5 $srcfn
+        if (( $mode_forcedownload )) || ! verify_file $md5 $srcfn
         then
             debug "need to download: $srcfn"
             rm -f $srcfn
@@ -286,6 +286,7 @@ install() {
 mode_checkupdates=0
 mode_dryrun=0
 mode_download=0
+mode_forcedownload=0
 mode_build=0
 mode_install=0
 mode_rebase=0
@@ -293,7 +294,7 @@ mode_changelog=0
 mode_search=0
 mode_gensearch=0
 
-while getopts cndbirlsg OPT
+while getopts cndDbirlsg OPT
 do
     case $OPT in
         (c)
@@ -304,6 +305,10 @@ do
             ;;
         (d)
             mode_download=1
+            ;;
+        (D)
+            mode_download=1
+            mode_forcedownload=1
             ;;
         (b)
             mode_download=1
