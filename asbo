@@ -284,6 +284,7 @@ install() {
 
 # Parse options
 
+mode_help=0
 mode_checkupdates=0
 mode_dryrun=0
 mode_download=0
@@ -295,9 +296,12 @@ mode_changelog=0
 mode_search=0
 mode_gensearch=0
 
-while getopts cndDbirlsg OPT
+while getopts hcndDbirlsg OPT
 do
     case $OPT in
+        (h)
+            mode_help=1
+            ;;
         (c)
             mode_checkupdates=1
             ;;
@@ -353,6 +357,35 @@ case $mode_search,$mode_gensearch in
         die "-s, -g both specified"
         ;;
 esac
+
+#-----------------------------------------------------------------------------#
+
+# Help
+
+if (( $mode_help ))
+then
+    cat << EOF
+Usage: asbo [OPTION]... [PACKAGE]...
+An anti-social SlackBuilds build order organiser.
+
+  -h    display this help
+
+  -d    download sources for named packages and dependencies
+  -b    build named packages and dependencies (implies -d)
+  -i    install named packages and dependencies (default; implies -b)
+  -D    force downloads (implies -d)
+  -n    show packages that would be built
+
+  -s    show information about named packages
+  -g    general search for packages
+
+  -r    run git rebase --pull in slackbuilds directory
+  -l    show slackbuilds changelog
+  -c    show potential updates to installed SBo packages
+
+EOF
+    exit
+fi
 
 #-----------------------------------------------------------------------------#
 
