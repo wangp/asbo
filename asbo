@@ -497,8 +497,7 @@ checkupdates() {
         local pkg_dir=$(find_pkg_dir $pkg softly)
         if [[ ! -d $pkg_dir ]]
         then
-            print -- "$pkg is not in SlackBuilds repository"
-            print
+            printf -- "%39s <=  %s\n" "(not found)" ${file:t}
             continue
         fi
         local info=$pkg_dir/$pkg.info
@@ -506,9 +505,7 @@ checkupdates() {
 
         if [[ $VERSION != $installed_version ]]
         then
-            print -- "$pkg $VERSION"
-            print -- "\t${file:t}"
-            print
+            printf -- "%-39s <=  %s\n" "$pkg $VERSION" ${file:t}
         fi
     done
 }
