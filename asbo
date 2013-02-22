@@ -36,10 +36,11 @@ readonly ARCH=${ARCH:-$(detect_arch)}
 #-----------------------------------------------------------------------------#
 
 find_pkg_dir() {
-    local pkg pkg_dir
+    local pkg pkg_dir softly
     pkg=$1
+    softly=$2
     pkg_dir=( $REPO/*/$pkg(N) )
-    if [[ $#pkg_dir == 0 ]]
+    if [[ $#pkg_dir == 0 && $softly != softly ]]
     then
         die "$pkg not found"
     fi
@@ -493,11 +494,11 @@ checkupdates() {
         split_pkg_name $file
         local pkg=$match[1]
         local installed_version=$match[2]
-        # XXX should not die if not found
-        local pkg_dir=$(find_pkg_dir $pkg)
+        local pkg_dir=$(find_pkg_dir $pkg softly)
         if [[ ! -d $pkg_dir ]]
         then
-            print -- "$pkg not in SlackBuilds repository"
+            print -- "$pkg is not in SlackBuilds repository"
+            print
             continue
         fi
         local info=$pkg_dir/$pkg.info
