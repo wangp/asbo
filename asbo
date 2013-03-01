@@ -90,8 +90,17 @@ some_version_installed() {
 
 #-----------------------------------------------------------------------------#
 
+excluded=()
 seen=()
 queue=()
+
+is_excluded() {
+    if [[ -n ${excluded[(re)$1]} ]]
+    then
+        return 0
+    fi
+    return 1
+}
 
 is_seen() {
     if [[ -n ${seen[(re)$1]} ]]
@@ -111,6 +120,12 @@ in_queue() {
 
 add_deps() {
     local pkg=$1
+    if is_excluded $pkg
+    then
+        debug "$pkg excluded"
+        return
+    fi
+
     local pkg_dir=$(find_pkg_dir $pkg)
     [[ -d $pkg_dir ]] || exit 1
     local info=$pkg_dir/$pkg.info
@@ -365,7 +380,7 @@ esac
 if (( $mode_help ))
 then
     cat << EOF
-Usage: asbo [OPTION]... [PACKAGE]...
+Usage: asbo [OPTION]... [PACKAGE]... [~EXCLUDE-PACKAGE]...
 An anti-social SlackBuilds build order organiser.
 
   -h    display this help
@@ -551,7 +566,16 @@ fi
 
 #-----------------------------------------------------------------------------#
 
-top_pkgs=( $@ )
+top_pkgs=()
+for pkg
+do
+    case $pkg in
+        (~*) excluded+=${pkg#\~} ;;
+        (*) top_pkgs+=$pkg ;;
+    esac
+done
+debug "exclusions: $excluded"
+
 for top_pkg in $top_pkgs
 do
     add_deps $top_pkg
