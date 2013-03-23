@@ -193,7 +193,12 @@ download_src() {
     . $info # XXX makes a mess
 
     local md5s srcs
-    if [[ $ARCH == x86_64 && -n $DOWNLOAD_x86_64 ]]
+    if [[ $ARCH == x86_64 && $DOWNLOAD_x86_64 == UN* ]]
+    then
+        warn "$pkg is $DOWNLOAD_x86_64 on x86_64."
+        srcs=( ${=DOWNLOAD} )
+        md5s=( ${=MD5SUM} )
+    elif [[ $ARCH == x86_64 && -n $DOWNLOAD_x86_64 ]]
     then
         srcs=( ${=DOWNLOAD_x86_64} )
         md5s=( ${=MD5SUM_x86_64} )
