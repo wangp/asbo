@@ -333,12 +333,13 @@ mode_download=0
 mode_forcedownload=0
 mode_build=0
 mode_install=0
+mode_cleanup=0
 mode_rebase=0
 mode_changelog=0
 mode_search=0
 mode_gensearch=0
 
-while getopts hcndDbirlsg OPT
+while getopts hcndDbirlsgx OPT
 do
     case $OPT in
         (h)
@@ -366,6 +367,9 @@ do
             mode_build=1
             mode_install=1
             ;;
+        (x)
+            mode_cleanup=1
+            ;;
         (r)
             mode_rebase=1
             ;;
@@ -385,12 +389,18 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_rebase,$mode_changelog,$mode_search,$mode_gensearch in
-    (0,0,0,0,0,0,0,0)
+case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_cleanup,$mode_rebase,$mode_changelog,$mode_search,$mode_gensearch in
+    (0,0,0,0,0,0,0,0,0)
         # Default to -i.
         mode_download=1
         mode_build=1
         mode_install=1
+        ;;
+esac
+
+case $mode_download,$mode_cleanup in
+    (1,1)
+        die "-x is incompatible with -d, -b and -i"
         ;;
 esac
 
@@ -413,10 +423,11 @@ An anti-social SlackBuilds build order organiser.
   -h    display this help
 
   -d    download sources for named packages and dependencies
+  -D    force downloads (implies -d)
   -b    build named packages and dependencies (implies -d)
   -i    install named packages and dependencies (default; implies -b)
-  -D    force downloads (implies -d)
   -n    show packages that would be built
+  -x    remove build directories for named packages
 
   -s    show information about named packages
   -g    general search for packages
@@ -561,6 +572,8 @@ fi
 
 #-----------------------------------------------------------------------------#
 
+# Check updates
+
 checkupdates() {
     local file split
     for file in $PKGDB/*_SBo(N)
@@ -587,6 +600,22 @@ checkupdates() {
 if (( $mode_checkupdates ))
 then
     checkupdates
+    exit 0
+fi
+
+#-----------------------------------------------------------------------------#
+
+# Clean up mode
+
+if (( $mode_cleanup ))
+then
+    for pkg
+    do
+        if ! remove_stagedir $pkg
+        then
+            exit 1
+        fi
+    done
     exit 0
 fi
 
