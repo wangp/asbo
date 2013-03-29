@@ -258,6 +258,7 @@ build() {
     local -r pkg=$1
     local -r pkg_dir=$(find_pkg_dir $pkg)
     local -r stagedir=$STAGEDIR/$pkg
+    local -r builddir=$stagedir/build
     shift 1
 
     rm -rf $stagedir
@@ -270,7 +271,7 @@ build() {
     done
 
     cd $stagedir
-    if ! maybe_fakeroot $SLACKBUILD_SHELL $pkg.SlackBuild
+    if ! TMP=$builddir maybe_fakeroot $SLACKBUILD_SHELL $pkg.SlackBuild
     then
         die "error building $pkg"
     fi
@@ -418,7 +419,7 @@ then
 fi
 if [[ -f $cfg  ]]
 then
-    . =( grep -E -e '^(REPO|CACHEDIR|STAGEDIR|LOGDIR|TMP|OUTPUT|MAKEFLAGS|WGET)=' $cfg )
+    . =( grep -E -e '^(REPO|CACHEDIR|STAGEDIR|LOGDIR|OUTPUT|MAKEFLAGS|WGET)=' $cfg )
 fi
 
 prefix=/tmp/asbo
@@ -428,7 +429,6 @@ readonly STAGEDIR=${STAGEDIR:-${prefix}/stage}
 readonly LOGDIR=${LOGDIR:-${prefix}/log}
 readonly WGET=${WGET:-/usr/bin/wget}
 
-export TMP=${TMP:-}
 export OUTPUT=${OUTPUT:-}
 export MAKEFLAGS=${MAKEFLAGS:-}
 

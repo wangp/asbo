@@ -6,7 +6,6 @@ STAGEDIR=/tmp/asbo/stage
 LOGDIR=/tmp/asbo/log
 
 # These variables are not used by asbo but affect .SlackBuild scripts.
-# TMP=/tmp/asbo/build
 # OUTPUT=/tmp/asbo/output
 # MAKEFLAGS=-j6
 
