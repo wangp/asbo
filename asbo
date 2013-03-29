@@ -270,10 +270,31 @@ build() {
         ln -s $CACHEDIR/$fn $stagedir
     done
 
+    local olddir=$PWD
+
     cd $stagedir
     if ! TMP=$builddir maybe_fakeroot $SLACKBUILD_SHELL $pkg.SlackBuild
     then
         die "error building $pkg"
+    fi
+
+    cd $olddir
+}
+
+#-----------------------------------------------------------------------------#
+
+remove_stagedir() {
+    local -r pkg=$1
+    local -r pkg_dir=$(find_pkg_dir $pkg)
+    local -r stagedir=$STAGEDIR/$pkg
+
+    if [[ -d $stagedir ]]
+    then
+        if ! rm -rf $stagedir
+        then
+            die "error removing $stagedir"
+        fi
+        echo "Removed $stagedir"
     fi
 }
 
@@ -639,6 +660,9 @@ do
             die "build failed"
         fi
     fi
+
+    remove_stagedir $pkg
+    print
 
     if (( $mode_install ))
     then
