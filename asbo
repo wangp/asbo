@@ -525,8 +525,11 @@ search() {
             cd $dir
             echo "Package: ${dir:t}"
             echo
-            cat README
-            echo
+            if [[ -r README ]]
+            then
+                cat README
+                echo
+            fi
             echo "--------"
             echo
             cat *.info
