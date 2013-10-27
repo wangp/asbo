@@ -327,6 +327,7 @@ install() {
 # Parse options
 
 mode_help=0
+mode_print=0
 mode_checkupdates=0
 mode_dryrun=0
 mode_download=0
@@ -339,11 +340,14 @@ mode_changelog=0
 mode_search=0
 mode_gensearch=0
 
-while getopts hcndDbirlsgx OPT
+while getopts hHcndDbirlsgx OPT
 do
     case $OPT in
         (h)
             mode_help=1
+            ;;
+        (H)
+            mode_print=1
             ;;
         (c)
             mode_checkupdates=1
@@ -421,6 +425,7 @@ Usage: asbo [OPTION]... [PACKAGE]... [~EXCLUDE-PACKAGE]...
 An anti-social SlackBuilds build order organiser.
 
   -h    display this help
+  -H    print configuration
 
   -d    download sources for named packages and dependencies
   -D    force downloads (implies -d)
@@ -463,6 +468,22 @@ readonly WGET=${WGET:-/usr/bin/wget}
 
 export OUTPUT=${OUTPUT:-}
 export MAKEFLAGS=${MAKEFLAGS:-}
+
+#-----------------------------------------------------------------------------#
+
+# Print configuration
+
+if (( $mode_print ))
+then
+    print "REPO=$REPO"
+    print "CACHEDIR=$CACHEDIR"
+    print "STAGEDIR=$STAGEDIR"
+    print "LOGDIR=$LOGDIR"
+    print "OUTPUT=$OUTPUT"
+    print "WGET=$WGET"
+    print "MAKEFLAGS=$MAKEFLAGS"
+    exit
+fi
 
 #-----------------------------------------------------------------------------#
 
