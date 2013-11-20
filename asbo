@@ -599,8 +599,24 @@ fi
 # Check updates
 
 checkupdates() {
-    local file split
-    for file in $PKGDB/*_SBo(N)
+    local -a candidates
+    if (( $# == 0 ))
+    then
+        candidates=( $PKGDB/*_SBo(N) )
+    else
+        local arg
+        for arg
+        do
+            candidates+=( $PKGDB/*${arg}*SBo(N) )
+        done
+        if (( $#candidates == 0 ))
+        then
+            print "No installed packages matching: $@"
+            return
+        fi
+    fi
+    local file
+    for file in $candidates
     do
         split_pkg_name $file
         local pkg=$match[1]
@@ -623,7 +639,7 @@ checkupdates() {
 
 if (( $mode_checkupdates ))
 then
-    checkupdates
+    checkupdates "$@"
     exit 0
 fi
 
