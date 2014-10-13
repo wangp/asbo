@@ -186,6 +186,52 @@ percent_decode() {
     echo -e ${1//'%'/'\x'}
 }
 
+content_disposition_filename() {
+    # XXX hack only works in simple cases.
+    if [[ $1 =~ $'[Cc]ontent-[Dd]isposition:.*; filename="?([^"\x0d\x0a]*)' ]]
+    then
+        percent_decode ${match[1]:t}
+    else
+        return 1
+    fi
+}
+
+check_and_download() {
+    local src=$1
+    local md5=$2
+
+    srcfn=$(percent_decode ${src:t})
+    if (( ! $mode_forcedownload )) && verify_file $md5 $srcfn
+    then
+        return 0
+    fi
+
+    # Might want to restrict this to known providers, e.g. github.
+    local curlout="$( ${=CURL} -s -I $src )"
+    local remotefn="$( content_disposition_filename $curlout )"
+    if [[ $remotefn != '' ]]
+    then
+        debug "remote filename: $remotefn"
+        srcfn=$remotefn
+        if (( ! $mode_forcedownload )) && verify_file $md5 $srcfn
+        then
+            return 0
+        fi
+    fi
+
+    # curl -O does not percent-decode.
+    print "Downloading $src" >&2
+    if ! ${=CURL} $src -o $srcfn
+    then
+        die "failed to download $src"
+    fi
+    if ! verify_file $md5 $srcfn
+    then
+        die "MD5 sum does not match: $srcfn"
+    fi
+    return 0
+}
+
 download_src() {
     local pkg=$1
     local pkg_dir=$(find_pkg_dir $pkg)
@@ -212,21 +258,12 @@ download_src() {
     do
         local src=$srcs[1]
         local md5=$md5s[1]
-        local srcfn=$(percent_decode ${src:t})
         shift srcs
         shift md5s
-        if (( $mode_forcedownload )) || ! verify_file $md5 $srcfn
+        local srcfn
+        if ! check_and_download $src $md5
         then
-            debug "need to download: $srcfn"
-            rm -f $srcfn
-            if ! ${=WGET} $src
-            then
-                die "failed to download $src"
-            fi
-            if ! verify_file $md5 $srcfn
-            then
-                die "MD5 sum does not match: $srcfn"
-            fi
+            die "failed to download $src"
         fi
         srcfns+=$srcfn
     done
@@ -456,7 +493,7 @@ then
 fi
 if [[ -f $cfg  ]]
 then
-    . =( grep -E -e '^(REPO|CACHEDIR|STAGEDIR|LOGDIR|OUTPUT|MAKEFLAGS|WGET)=' $cfg )
+    . =( grep -E -e '^(REPO|CACHEDIR|STAGEDIR|LOGDIR|OUTPUT|MAKEFLAGS|CURL)=' $cfg )
 fi
 
 prefix=/tmp/asbo
@@ -464,7 +501,7 @@ readonly REPO=${REPO:-${prefix}/slackbuilds}
 readonly CACHEDIR=${CACHEDIR:-${prefix}/cache}
 readonly STAGEDIR=${STAGEDIR:-${prefix}/stage}
 readonly LOGDIR=${LOGDIR:-${prefix}/log}
-readonly WGET=${WGET:-/usr/bin/wget}
+readonly CURL=${CURL:-/usr/bin/curl -S -L --max-redirs 3}
 
 export OUTPUT=${OUTPUT:-}
 export MAKEFLAGS=${MAKEFLAGS:-}
@@ -480,7 +517,7 @@ then
     print "STAGEDIR=$STAGEDIR"
     print "LOGDIR=$LOGDIR"
     print "OUTPUT=$OUTPUT"
-    print "WGET=$WGET"
+    print "CURL=$CURL"
     print "MAKEFLAGS=$MAKEFLAGS"
     exit
 fi
