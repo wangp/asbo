@@ -232,6 +232,7 @@ check_and_download() {
     return 0
 }
 
+# Returns: srcfns
 download_src() {
     local pkg=$1
     local pkg_dir=$(find_pkg_dir $pkg)
@@ -253,7 +254,6 @@ download_src() {
         md5s=( ${=MD5SUM} )
     fi
 
-    local -a srcfns
     while (( $#md5s > 0 ))
     do
         local src=$srcs[1]
@@ -265,15 +265,13 @@ download_src() {
         then
             die "failed to download $src"
         fi
-        srcfns+=$srcfn
+        srcfns[$srcfn]=${src:t} # return value
     done
 
     if (( $#dls > 0 ))
     then
         die "list length mismatch"
     fi
-
-    print -l -- $srcfns
 }
 
 #-----------------------------------------------------------------------------#
@@ -291,6 +289,7 @@ maybe_fakeroot() {
     fi
 }
 
+# Implicit parameter: srcfns
 build() {
     local -r pkg=$1
     local -r pkg_dir=$(find_pkg_dir $pkg)
@@ -301,10 +300,16 @@ build() {
     rm -rf $stagedir
     mkdir -p $stagedir
     cp -r $pkg_dir/* $stagedir
-    local fn
-    for fn in "$@"
+
+    local fn otherfn
+    for fn in ${(k)srcfns}
     do
+        otherfn=${srcfns[$fn]}
         ln -s $CACHEDIR/$fn $stagedir
+        if [[ $fn != $otherfn ]]
+        then
+            ln -s $CACHEDIR/$fn $stagedir/$otherfn
+        fi
     done
 
     local olddir=$PWD
@@ -755,8 +760,9 @@ do
 
     cd $CACHEDIR
     local logfile=$LOGDIR/$pkg.log
-    local -a srcfns
-    srcfns=($( download_src $pkg ))
+
+    local -A srcfns
+    download_src $pkg
 
     if (( $mode_build ))
     then
