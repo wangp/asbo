@@ -299,7 +299,7 @@ build() {
     shift 1
 
     rm -rf $stagedir
-    mkdir -p $stagedir
+    mkdir -p $stagedir $builddir
     cp -r $pkg_dir/* $stagedir
 
     local fn otherfn
