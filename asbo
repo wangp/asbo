@@ -507,7 +507,7 @@ readonly REPO=${REPO:-${prefix}/slackbuilds}
 readonly CACHEDIR=${CACHEDIR:-${prefix}/cache}
 readonly STAGEDIR=${STAGEDIR:-${prefix}/stage}
 readonly LOGDIR=${LOGDIR:-${prefix}/log}
-readonly CURL=${CURL:-/usr/bin/curl -S -L --max-redirs 3}
+readonly CURL=${CURL:-/usr/bin/curl -S -L --max-redirs 10}
 
 export OUTPUT=${OUTPUT:-}
 export MAKEFLAGS=${MAKEFLAGS:-}
