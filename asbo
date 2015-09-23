@@ -382,8 +382,9 @@ mode_rebase=0
 mode_changelog=0
 mode_search=0
 mode_gensearch=0
+mode_revdeps=0
 
-while getopts hHcndDbirlsgx OPT
+while getopts hHcndDbirlsgqx OPT
 do
     case $OPT in
         (h)
@@ -429,6 +430,9 @@ do
         (g)
             mode_gensearch=1
             ;;
+        (q) # reQuires?
+            mode_revdeps=1
+            ;;
         (?)
             die "unrecognised option"
             ;;
@@ -436,8 +440,8 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_cleanup,$mode_rebase,$mode_changelog,$mode_search,$mode_gensearch in
-    (0,0,0,0,0,0,0,0,0)
+case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_cleanup,$mode_rebase,$mode_changelog,$mode_search,$mode_gensearch,$mode_revdeps in
+    (0,0,0,0,0,0,0,0,0,0)
         # Default to -i.
         mode_download=1
         mode_build=1
@@ -451,9 +455,15 @@ case $mode_download,$mode_cleanup in
         ;;
 esac
 
-case $mode_search,$mode_gensearch in
-    (1,1)
+case $mode_search,$mode_gensearch,$mode_revdeps in
+    (1,1,?)
         die "-s, -g both specified"
+        ;;
+    (1,?,1)
+        die "-s, -q both specified"
+        ;;
+    (?,1,1)
+        die "-g, -q both specified"
         ;;
 esac
 
@@ -479,6 +489,7 @@ An anti-social SlackBuilds build order organiser.
 
   -s    show information about named packages
   -g    general search for packages
+  -q    search for packages directly requiring named packages
 
   -r    run git rebase --pull in slackbuilds directory
   -l    show slackbuilds changelog
@@ -633,6 +644,30 @@ then
     for arg
     do
         gensearch $arg
+    done
+    exit 0
+fi
+
+#-----------------------------------------------------------------------------#
+
+basic_re_quote() {
+    # Basic meta characters:  \ . [ ^ $ \ *
+    # Not meta characters:    ? + { | ( )
+    sed 's/[\.[^$*]/\\&/g' <<< "$*"
+}
+
+revdeps() {
+    local -r pkg=$(basic_re_quote $1)
+    cd $REPO
+    grep -l -G -e "^REQUIRES=\".*\<${pkg}\( \|\"\)" */*/*.info |
+        cut -d/ -f1-2 | sort
+}
+
+if (( $mode_revdeps ))
+then
+    for arg
+    do
+        revdeps $arg
     done
     exit 0
 fi
