@@ -803,6 +803,7 @@ do
     if (( $mode_build ))
     then
         print "Building $pkg"
+        rm -f $logfile $logfile.xz
         if ! build $pkg $srcfns >& /dev/stdout >& $logfile
         then
             die "build failed"
@@ -817,6 +818,8 @@ do
         print "Installing $pkg (enter sudo password if required)"
         install $(extract_built_pkg_filename $logfile)
     fi
+
+    xz $logfile
 done
 
 #-----------------------------------------------------------------------------#
