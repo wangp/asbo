@@ -1,12 +1,12 @@
 # This configuration file belongs in ~/.config/asbo/asbo.conf
 
-REPO=/tmp/asbo/slackbuilds
-CACHEDIR=/tmp/asbo/cache
-STAGEDIR=/tmp/asbo/stage
-LOGDIR=/tmp/asbo/log
+REPO=/var/tmp/asbo/slackbuilds
+CACHEDIR=/var/tmp/asbo/cache
+STAGEDIR=/var/tmp/asbo/stage
+LOGDIR=/var/tmp/asbo/log
 
 # These variables are not used by asbo but affect .SlackBuild scripts.
-# OUTPUT=/tmp/asbo/output
+# OUTPUT=/var/tmp/asbo/output
 # MAKEFLAGS=-j6
 
 # vim: ft=sh

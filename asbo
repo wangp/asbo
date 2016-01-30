@@ -513,7 +513,7 @@ then
     . =( grep -E -e '^(REPO|CACHEDIR|STAGEDIR|LOGDIR|OUTPUT|MAKEFLAGS|CURL)=' $cfg )
 fi
 
-prefix=/tmp/asbo
+prefix=/var/tmp/asbo
 readonly REPO=${REPO:-${prefix}/slackbuilds}
 readonly CACHEDIR=${CACHEDIR:-${prefix}/cache}
 readonly STAGEDIR=${STAGEDIR:-${prefix}/stage}
