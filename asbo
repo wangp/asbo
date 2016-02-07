@@ -810,16 +810,21 @@ do
         fi
     fi
 
+    local pkg_filename=$(extract_built_pkg_filename $logfile)
+
+    xz $logfile
+
     remove_stagedir $pkg
     print
 
     if (( $mode_install ))
     then
         print "Installing $pkg (enter sudo password if required)"
-        install $(extract_built_pkg_filename $logfile)
+        if ! install $pkg_filename
+        then
+            die "install failed"
+        fi
     fi
-
-    xz $logfile
 done
 
 #-----------------------------------------------------------------------------#
