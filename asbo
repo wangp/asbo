@@ -800,6 +800,8 @@ do
     local -A srcfns
     download_src $pkg
 
+    local pkg_filename=
+
     if (( $mode_build ))
     then
         print "Building $pkg"
@@ -808,16 +810,15 @@ do
         then
             die "build failed"
         fi
+
+        pkg_filename=$(extract_built_pkg_filename $logfile)
+        xz $logfile
+
+        remove_stagedir $pkg
+        print
     fi
 
-    local pkg_filename=$(extract_built_pkg_filename $logfile)
-
-    xz $logfile
-
-    remove_stagedir $pkg
-    print
-
-    if (( $mode_install ))
+    if (( $mode_install ))  # currently implies mode_build
     then
         print "Installing $pkg (enter sudo password if required)"
         if ! install $pkg_filename
