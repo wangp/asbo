@@ -665,7 +665,8 @@ basic_re_quote() {
 revdeps() {
     local -r pkg=$(basic_re_quote $1)
     cd $REPO
-    grep -l -G -e "^REQUIRES=\".*\<${pkg}\( \|\"\)" */*/*.info |
+    # grep -l -G -e "^REQUIRES=\".*\<${pkg}\( \|\"\)" */*/*.info
+    git grep -l -G -e "^REQUIRES=\".*\<${pkg}\( \|\"\)" -- '*/*/*.info' |
         cut -d/ -f1-2 | sort
 }
 
