@@ -383,8 +383,9 @@ mode_changelog=0
 mode_search=0
 mode_gensearch=0
 mode_revdeps=0
+mode_recrevdeps=0
 
-while getopts hHcndDbirlsgqx OPT
+while getopts hHcndDbirlsgqQx OPT
 do
     case $OPT in
         (h)
@@ -432,6 +433,10 @@ do
             ;;
         (q) # reQuires?
             mode_revdeps=1
+            ;;
+        (Q)
+            mode_revdeps=1
+            mode_recrevdeps=1
             ;;
         (?)
             die "unrecognised option"
@@ -490,6 +495,7 @@ An anti-social SlackBuilds build order organiser.
   -s    show information about named packages
   -g    general search for packages
   -q    search for packages directly requiring named packages
+  -Q    search for packages requiring named packages (implies -q)
 
   -r    run git rebase --pull in slackbuilds directory
   -l    show slackbuilds changelog
@@ -663,11 +669,52 @@ revdeps() {
         cut -d/ -f1-2 | sort
 }
 
+is_installed() {
+    local -a candidates
+    candidates=( $PKGDB/${1}-*-*-*_SBo(N) )
+    if (( $#candidates > 0 ))
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
 if (( $mode_revdeps ))
 then
-    for arg
+    queue=($@)
+    while (( $#queue > 0 ))
     do
-        revdeps $arg
+        arg=${queue[1]}
+        shift queue
+
+        if is_seen $arg
+        then
+            continue
+        fi
+        seen+=$arg
+
+        deps=($( revdeps $arg ))
+        if (( $#deps == 0 ))
+        then
+            continue
+        fi
+
+        print -- "dependent on $arg"
+        for r in $deps
+        do
+            rpkg=${r##*/}
+            if is_installed $rpkg
+            then
+                printf " *  %s\n" $indent $r
+                if (( $mode_recrevdeps )) && ! is_seen $rpkg
+                then
+                    queue+=$rpkg
+                fi
+            else
+                printf "    %s\n" $indent $r
+            fi
+        done
     done
     exit 0
 fi
