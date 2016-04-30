@@ -196,6 +196,12 @@ content_disposition_filename() {
     fi
 }
 
+sbosrcarch() {
+    local src=$1
+    local md5=$2
+    print "http://slackware.uk/sbosrcarch/by-md5/${md5:0:1}/${md5:1:1}/${md5}/${src:t}"
+}
+
 # Returns: srcfn
 check_and_download() {
     local src=$1
@@ -224,7 +230,12 @@ check_and_download() {
     print "Downloading $src" >&2
     if ! ${=CURL} $src -o $srcfn
     then
-        die "failed to download $src"
+        local altsrc=$(sbosrcarch $src $md5)
+        print "Downloading $altsrc" >&2
+        if ! ${=CURL} $altsrc -o $srcfn
+        then
+            die "failed to download $altsrc"
+        fi
     fi
     if ! verify_file $md5 $srcfn
     then
