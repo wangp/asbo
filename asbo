@@ -27,6 +27,7 @@ die() {
 detect_arch() {
     case "$( uname -m )" in
         i?86) echo "x86" ;;
+        arm*) echo "arm" ;;
            *) echo $( uname -m ) ;;
     esac
 }
@@ -261,6 +262,10 @@ download_src() {
     then
         srcs=( ${=DOWNLOAD_x86_64} )
         md5s=( ${=MD5SUM_x86_64} )
+    elif [[ $ARCH == arm && -n $DOWNLOAD_arm ]] # non-standard extension
+    then
+        srcs=( ${=DOWNLOAD_arm} )
+        md5s=( ${=MD5SUM_arm} )
     else
         srcs=( ${=DOWNLOAD} )
         md5s=( ${=MD5SUM} )
