@@ -24,18 +24,6 @@ die() {
 
 #-----------------------------------------------------------------------------#
 
-detect_arch() {
-    case "$( uname -m )" in
-        i?86) echo "x86" ;;
-        arm*) echo "arm" ;;
-           *) echo $( uname -m ) ;;
-    esac
-}
-
-readonly ARCH=${ARCH:-$(detect_arch)}
-
-#-----------------------------------------------------------------------------#
-
 find_pkg_dir() {
     local pkg pkg_dir softly
     pkg=$1
@@ -252,17 +240,22 @@ download_src() {
     local info=$pkg_dir/$pkg.info
     . $info # XXX makes a mess
 
+    local dlarch="${ARCH:-$(uname -m)}"
+    case $dlarch in
+        arm*) dlarch=arm ;;
+    esac
+
     local md5s srcs
-    if [[ $ARCH == x86_64 && $DOWNLOAD_x86_64 == UN* ]]
+    if [[ $dlarch == x86_64 && $DOWNLOAD_x86_64 == UN* ]]
     then
         warn "$pkg is $DOWNLOAD_x86_64 on x86_64."
         srcs=( ${=DOWNLOAD} )
         md5s=( ${=MD5SUM} )
-    elif [[ $ARCH == x86_64 && -n $DOWNLOAD_x86_64 ]]
+    elif [[ $dlarch == x86_64 && -n $DOWNLOAD_x86_64 ]]
     then
         srcs=( ${=DOWNLOAD_x86_64} )
         md5s=( ${=MD5SUM_x86_64} )
-    elif [[ $ARCH == arm && -n $DOWNLOAD_arm ]] # non-standard extension
+    elif [[ $dlarch == arm && -n $DOWNLOAD_arm ]] # non-standard extension
     then
         srcs=( ${=DOWNLOAD_arm} )
         md5s=( ${=MD5SUM_arm} )
