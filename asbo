@@ -587,7 +587,12 @@ if (( $mode_rebase ))
 then
     print "Updating repository:  git pull --rebase"
     cd $REPO
-    exec git pull --rebase
+    if ! git pull --rebase
+    then
+        echo "Fix manually $REPO"
+        exit 1
+    fi
+    exit 0
 fi
 
 #-----------------------------------------------------------------------------#
