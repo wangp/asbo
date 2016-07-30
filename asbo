@@ -686,7 +686,7 @@ revdeps() {
 
 is_installed() {
     local -a candidates
-    candidates=( $PKGDB/${1}-*-*-*_SBo(N) )
+    candidates=( $PKGDB/${1}-*-*-*_{SBo,slonly}(N) )
     if (( $#candidates > 0 ))
     then
         return 0
@@ -742,12 +742,12 @@ checkupdates() {
     local -a candidates
     if (( $# == 0 ))
     then
-        candidates=( $PKGDB/*_SBo(N) )
+        candidates=( $PKGDB/*_{SBo,slonly}(N) )
     else
         local arg
         for arg
         do
-            candidates+=( $PKGDB/*${arg}*SBo(N) )
+            candidates+=( $PKGDB/*${arg}*{SBo,slonly}(N) )
         done
         if (( $#candidates == 0 ))
         then
