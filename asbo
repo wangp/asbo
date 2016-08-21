@@ -605,6 +605,15 @@ fi
 
 #-----------------------------------------------------------------------------#
 
+highlight_shell() {
+    if command -v highlight >/dev/null
+    then
+        command highlight --syntax sh --style zmrok -O xterm256 "$@"
+    else
+        cat "$@"
+    fi
+}
+
 search() {
     local glob dir
     # Interpret shell metacharacters in $1.
@@ -627,11 +636,11 @@ search() {
             fi
             echo "--------"
             echo
-            cat *.info
+            highlight_shell *.info
             echo
             echo "--------"
             echo
-            cat *.SlackBuild
+            highlight_shell *.SlackBuild
         ) | ${=PAGER}
     done
 }
