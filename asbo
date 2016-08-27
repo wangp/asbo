@@ -609,6 +609,9 @@ highlight_shell() {
     if command -v highlight >/dev/null
     then
         command highlight --syntax sh --style zmrok -O xterm256 "$@"
+    elif command -v pygmentize >/dev/null
+    then
+        command pygmentize -l sh -O bg=dark,style=lovelace -f terminal256 "$@"
     else
         cat "$@"
     fi
