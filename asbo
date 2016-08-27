@@ -597,10 +597,15 @@ fi
 
 #-----------------------------------------------------------------------------#
 
+highlight_changelog() {
+    grep --color=always '^.*: Added .*\|^+--------------------------+\|$' "$@"
+}
+
 if (( $mode_changelog ))
 then
     cd $REPO
-    exec ${=PAGER} ChangeLog.txt
+    highlight_changelog ChangeLog.txt | ${=PAGER}
+    exit
 fi
 
 #-----------------------------------------------------------------------------#
