@@ -390,11 +390,12 @@ mode_cleanup=0
 mode_rebase=0
 mode_changelog=0
 mode_search=0
+mode_showhome=0
 mode_gensearch=0
 mode_revdeps=0
 mode_recrevdeps=0
 
-while getopts hCcndDbirlsgqQx OPT
+while getopts hCcndDbirlsSgqQx OPT
 do
     case $OPT in
         (h)
@@ -437,6 +438,9 @@ do
         (s)
             mode_search=1
             ;;
+        (S)
+            mode_showhome=1
+            ;;
         (g)
             mode_gensearch=1
             ;;
@@ -454,8 +458,8 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_cleanup,$mode_rebase,$mode_changelog,$mode_search,$mode_gensearch,$mode_revdeps in
-    (0,0,0,0,0,0,0,0,0,0)
+case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_cleanup,$mode_rebase,$mode_changelog,$mode_search,$mode_showhome,$mode_gensearch,$mode_revdeps in
+    (0,0,0,0,0,0,0,0,0,0,0)
         # Default to -i.
         mode_download=1
         mode_build=1
@@ -469,17 +473,10 @@ case $mode_download,$mode_cleanup in
         ;;
 esac
 
-case $mode_search,$mode_gensearch,$mode_revdeps in
-    (1,1,?)
-        die "-s, -g both specified"
-        ;;
-    (1,?,1)
-        die "-s, -q both specified"
-        ;;
-    (?,1,1)
-        die "-g, -q both specified"
-        ;;
-esac
+if (( $mode_search + $mode_showhome + $mode_gensearch + $mode_revdeps > 1 ))
+then
+    die "only one of -s, -S, -g, -q can be specified"
+fi
 
 #-----------------------------------------------------------------------------#
 
@@ -502,6 +499,7 @@ An anti-social SlackBuilds build order organiser.
   -x    remove build directories for named packages
 
   -s    show information about named packages
+  -S    open home page for named packages
   -g    general search for packages
   -q    search for packages directly requiring named packages
   -Q    search for packages requiring named packages (implies -q)
@@ -622,6 +620,36 @@ highlight_shell() {
     fi
 }
 
+show_files() {
+    local dir=$1
+    (
+        cd $dir
+        echo "Package: ${dir:t}"
+        echo
+        if [[ -r README ]]
+        then
+            cat README
+            echo
+        fi
+        echo "--------"
+        echo
+        highlight_shell *.info
+        echo
+        echo "--------"
+        echo
+        highlight_shell *.SlackBuild
+    ) | ${=PAGER}
+}
+
+show_homepage() {
+    local dir=$1
+    (
+        cd $dir
+        . ./${dir:t}.info
+        xdg-open $HOMEPAGE
+    )
+}
+
 search() {
     local glob dir
     # Interpret shell metacharacters in $1.
@@ -633,27 +661,16 @@ search() {
     fi
     for dir in $glob
     do
-        (
-            cd $dir
-            echo "Package: ${dir:t}"
-            echo
-            if [[ -r README ]]
-            then
-                cat README
-                echo
-            fi
-            echo "--------"
-            echo
-            highlight_shell *.info
-            echo
-            echo "--------"
-            echo
-            highlight_shell *.SlackBuild
-        ) | ${=PAGER}
+        if (( $mode_showhome ))
+        then
+            show_homepage $dir
+        else
+            show_files $dir
+        fi
     done
 }
 
-if (( $mode_search ))
+if (( $mode_search || $mode_showhome ))
 then
     for arg
     do
