@@ -27,7 +27,7 @@ die() {
 find_pkg_dir() {
     local pkg pkg_dir softly
     pkg=$1
-    softly=$2
+    softly=${2:-no}
     pkg_dir=( $REPO/*/$pkg(N) )
     if [[ $#pkg_dir == 0 && $softly != softly ]]
     then
@@ -84,7 +84,7 @@ seen=()
 queue=()
 
 is_excluded() {
-    if [[ -n ${excluded[(re)$1]} ]]
+    if (( ${+excluded[(re)$1]} ))
     then
         return 0
     fi
@@ -92,7 +92,7 @@ is_excluded() {
 }
 
 is_seen() {
-    if [[ -n ${seen[(re)$1]} ]]
+    if (( ${+seen[(re)$1]} ))
     then
         return 0
     fi
@@ -100,7 +100,7 @@ is_seen() {
 }
 
 in_queue() {
-    if [[ -n ${queue[(re)$1]} ]]
+    if (( ${+queue[(re)$1]} ))
     then
         return 0
     fi
@@ -755,13 +755,13 @@ then
             rpkg=${r##*/}
             if is_installed $rpkg
             then
-                printf " *  %s\n" $indent $r
+                printf " *  %s\n" $r
                 if (( $mode_recrevdeps )) && ! is_seen $rpkg
                 then
                     queue+=$rpkg
                 fi
             else
-                printf "    %s\n" $indent $r
+                printf "    %s\n" $r
             fi
         done
     done
@@ -869,7 +869,7 @@ mkdir -p $LOGDIR
 
 for pkg in $queue
 do
-    if [[ -n ${top_pkgs[(re)$pkg]} ]]
+    if (( ${+top_pkgs[(re)$pkg]} ))
     then
         if same_version_installed $pkg
         then
