@@ -379,7 +379,7 @@ install() {
 # Parse options
 
 mode_help=0
-mode_print=0
+mode_printconfig=0
 mode_checkupdates=0
 mode_dryrun=0
 mode_download=0
@@ -394,14 +394,14 @@ mode_gensearch=0
 mode_revdeps=0
 mode_recrevdeps=0
 
-while getopts hHcndDbirlsgqQx OPT
+while getopts hCcndDbirlsgqQx OPT
 do
     case $OPT in
         (h)
             mode_help=1
             ;;
-        (H)
-            mode_print=1
+        (C)
+            mode_printconfig=1
             ;;
         (c)
             mode_checkupdates=1
@@ -492,7 +492,7 @@ Usage: asbo [OPTION]... [PACKAGE]... [~EXCLUDE-PACKAGE]...
 An anti-social SlackBuilds build order organiser.
 
   -h    display this help
-  -H    print configuration
+  -C    print configuration
 
   -d    download sources for named packages and dependencies
   -D    force downloads (implies -d)
@@ -542,7 +542,7 @@ export MAKEFLAGS=${MAKEFLAGS:-}
 
 # Print configuration
 
-if (( $mode_print ))
+if (( $mode_printconfig ))
 then
     print "REPO=$REPO"
     print "CACHEDIR=$CACHEDIR"
