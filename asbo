@@ -391,11 +391,12 @@ mode_rebase=0
 mode_changelog=0
 mode_search=0
 mode_showhome=0
-mode_gensearch=0
+mode_searchname=0
+mode_searchdesc=0
 mode_revdeps=0
 mode_recrevdeps=0
 
-while getopts hCcndDbirlsSgqQx OPT
+while getopts hCcndDbirlsSgGqQx OPT
 do
     case $OPT in
         (h)
@@ -442,7 +443,10 @@ do
             mode_showhome=1
             ;;
         (g)
-            mode_gensearch=1
+            mode_searchname=1
+            ;;
+        (G)
+            mode_searchdesc=1
             ;;
         (q) # reQuires?
             mode_revdeps=1
@@ -458,8 +462,8 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_cleanup,$mode_rebase,$mode_changelog,$mode_search,$mode_showhome,$mode_gensearch,$mode_revdeps in
-    (0,0,0,0,0,0,0,0,0,0,0)
+case $mode_checkupdates,$mode_download,$mode_build,$mode_install,$mode_cleanup,$mode_rebase,$mode_changelog,$mode_search,$mode_showhome,$mode_searchname,$mode_searchdesc,$mode_revdeps in
+    (0,0,0,0,0,0,0,0,0,0,0,0)
         # Default to -i.
         mode_download=1
         mode_build=1
@@ -473,9 +477,9 @@ case $mode_download,$mode_cleanup in
         ;;
 esac
 
-if (( $mode_search + $mode_showhome + $mode_gensearch + $mode_revdeps > 1 ))
+if (( $mode_search + $mode_showhome + $mode_searchname + $mode_searchdesc + $mode_revdeps > 1 ))
 then
-    die "only one of -s, -S, -g, -q can be specified"
+    die "only one of -s, -S, -g, -G, -q can be specified"
 fi
 
 #-----------------------------------------------------------------------------#
@@ -500,7 +504,8 @@ An anti-social SlackBuilds build order organiser.
 
   -s    show information about named packages
   -S    open home page for named packages
-  -g    general search for packages
+  -g    search by package name
+  -G    search by package descriptions
   -q    search for packages directly requiring named packages
   -Q    search for packages requiring named packages (implies -q)
 
@@ -681,7 +686,7 @@ fi
 
 #-----------------------------------------------------------------------------#
 
-gensearch() {(
+search_name() {(
     setopt no_case_glob
     cd $REPO
     glob=( */*${1}*(/N) )
@@ -693,11 +698,11 @@ gensearch() {(
     print -l -- $glob
 )}
 
-if (( $mode_gensearch ))
+if (( $mode_searchname ))
 then
     for arg
     do
-        gensearch $arg
+        search_name $arg
     done
     exit 0
 fi
@@ -709,6 +714,28 @@ basic_re_quote() {
     # Not meta characters:    ? + { | ( )
     sed 's/[\.[^$*]/\\&/g' <<< "$*"
 }
+
+if (( $mode_searchdesc ))
+then
+    cd $REPO
+    term=$(basic_re_quote $1)
+    files=($(grep -l -i -e "^[^:]*: .*${term}" */*/slack-desc))
+    remaining=$#files
+    for file in $files
+    do
+        sed -n -e '/^[^: ]*:/  s/^[^:]*: \?//  p' $file
+        if (( $remaining > 1 ))
+        then
+            echo
+            echo "--------"
+            echo
+            (( remaining-- ))
+        fi
+    done | cat -s | grep --color=always -i -e "$term\|$" | ${=PAGER}
+    exit 0
+fi
+
+#-----------------------------------------------------------------------------#
 
 revdeps() {
     local -r pkg=$(basic_re_quote $1)
