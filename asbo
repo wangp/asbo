@@ -371,7 +371,12 @@ maybe_sudo() {
 }
 
 install() {
-    maybe_sudo /sbin/upgradepkg --install-new --reinstall $1
+    if [[ -x /usr/bin/spkg ]]
+    then
+        maybe_sudo /usr/bin/spkg --install-new --reinstall $1
+    else
+        maybe_sudo /sbin/upgradepkg --install-new --reinstall $1
+    fi
 }
 
 #-----------------------------------------------------------------------------#
